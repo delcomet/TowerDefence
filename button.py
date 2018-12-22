@@ -13,11 +13,11 @@ class Button(pygame.sprite.Sprite):
         self.pos = pos
         self.alpha = alpha
 
-        self.normal_image = pygame.image.load("normal_button.png").convert_alpha()
+        self.normal_image = pygame.image.load("data/images/normal_button.png").convert_alpha()
         self.normal_image = pygame.transform.smoothscale(self.normal_image, [self.width, self.height])
-        self.pressed_image = pygame.image.load("pressed_button.png")
+        self.pressed_image = pygame.image.load("data/images/pressed_button.png")
         self.pressed_image = pygame.transform.smoothscale(self.pressed_image, [self.width, self.height])
-        self.hover_image = pygame.image.load("hover_button.png")
+        self.hover_image = pygame.image.load("data/images/hover_button.png")
         self.hover_image = pygame.transform.smoothscale(self.hover_image, [self.width, self.height])
 
         self.image = self.normal_image.copy()
@@ -80,7 +80,5 @@ class Button(pygame.sprite.Sprite):
             self.hovering_state = 0
             self.image = self.normal_image.copy()
             self.image.blit(self.icon, self.icon_pos)
-
-
 
 
