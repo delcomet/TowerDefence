@@ -21,11 +21,11 @@ class Bullet(pygame.sprite.Sprite):
         self.pos = vector.plus(self.pos, self.speed)
         self.set_position(self.pos)
 
-    def check_borders(self, map):
-        if self.pos[0] < self.rect.width or self.pos[1] < self.rect.height or self.pos[0] > map.pixel_size[0] or \
-                        self.pos[1] > map.pixel_size[1]:
+    def check_borders(self, terrain):
+        if self.pos[0] < self.rect.width or self.pos[1] < self.rect.height or self.pos[0] > terrain.pixel_size[0] or \
+                        self.pos[1] > terrain.pixel_size[1]:
             self.kill()
 
-    def update(self, map):
+    def update(self, terrain):
         self.apply_speed()
-        self.check_borders(map)
+        self.check_borders(terrain)

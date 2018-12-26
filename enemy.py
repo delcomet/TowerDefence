@@ -1,22 +1,23 @@
 import vector
 from colors import *
 import pygame
+import compass
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos, speed_scalar, speed_vector, health, radius, color):
+    def __init__(self, pos, speed, direction, health, radius, color):
         super().__init__()
 
         self.color = color.copy()
         self.pos = pos
         self.radius = radius
-        self.speed = vector.times(speed_scalar, speed_vector)
+        self.speed = speed
+        self.direction = direction
         self.image = pygame.Surface([radius * 2, radius * 2])
         self.image.fill(white)
         self.image.set_colorkey(white)
         pygame.draw.circle(self.image, color, (radius, radius), radius, )
         self.origin = pos[0] + radius, pos[1] + radius
         self.rect = self.image.get_rect()
-        self.crossed_checkpoints = []
         self.index = 0
         self.move_origin(pos)
         self.distance_travelled = 0
@@ -36,77 +37,41 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.y = self.pos[1]
 
     def apply_speed(self):
-        self.pos = vector.plus(self.pos, self.speed)
-        self.set_position(self.pos)
-        self.distance_travelled += vector.mag(self.speed)
+        movement = vector.times(self.speed, self.direction)
+        new_pos = vector.plus(self.pos, movement)
+        self.set_position(new_pos)
+        self.distance_travelled += vector.mag(movement)
 
     def draw_image(self):
         pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius, )
 
-    def hit_checkpoint(self, map):
-        tile_sprites = map.tiles.sprites()
-        for checkpoint in map.checkpoints:
-            distance_vector = [checkpoint.origin[0] - self.origin[0], checkpoint.origin[1] - self.origin[1]]
-            if vector.mag(distance_vector) < checkpoint.size:
+    def move_in_terrain(self, terrain):
+        if not self.can_go(terrain, self.direction):
+            new_direction = vector.perpendicular(self.direction)
+            if not self.can_go(terrain, new_direction):
+                new_direction = vector.reverse(new_direction)
+            self.direction = new_direction
 
-                if self.speed[0] == 0:
+    def can_go(self, terrain, direction):
+        distance_vector = vector.times(1.5 * terrain.tile_size + 1, direction)
+        tile_pos = vector.plus(distance_vector, self.origin)
+        tile = terrain.get_tile(tile_pos)
+        if tile.color == grass:
+            return False
+        else:
+            return True
 
-                    # Moving UP
-                    if self.speed[1] < 0 and checkpoint.rect.centery > self.rect.centery and checkpoint not in self.crossed_checkpoints:
-                        self.crossed_checkpoints.append(checkpoint)
-                        # Turning RIGHT
-                        if tile_sprites[checkpoint.index - 2].color == grass:
-                            self.speed = [-1 * self.speed[1], self.speed[0]]
-                        # Turning LEFT
-                        else:
-                            self.speed = [self.speed[1], self.speed[0]]
-                        self.move_origin(checkpoint.origin)
 
-                    # Moving DOWN
-                    if self.speed[1] > 0 and checkpoint.rect.centery < self.rect.centery and checkpoint not in self.crossed_checkpoints:
-                        self.crossed_checkpoints.append(checkpoint)
-                        # Turning RIGHT
-                        if tile_sprites[checkpoint.index - 2].color == grass:
-                            self.speed = [self.speed[1], self.speed[0]]
-                        # Turning LEFT
-                        else:
-                            self.speed = [-1 * self.speed[1], self.speed[0]]
-                        self.move_origin(checkpoint.origin)
-
-                elif self.speed[1] == 0:
-
-                    # Moving LEFT
-                    if self.speed[0] < 0 and checkpoint.rect.centerx > self.rect.centerx and checkpoint not in self.crossed_checkpoints:
-                        self.crossed_checkpoints.append(checkpoint)
-                        # Turning DOWN
-                        if tile_sprites[checkpoint.index - 2 * map.width].color == grass:
-                            self.speed = [self.speed[1], -1 * self.speed[0]]
-                        # Turning UP
-                        else:
-                            self.speed = [self.speed[1], self.speed[0]]
-                        self.move_origin(checkpoint.origin)
-
-                    # Moving RIGHT
-                    if self.speed[0] > 0 and checkpoint.rect.centerx < self.rect.centerx and checkpoint not in self.crossed_checkpoints:
-                        self.crossed_checkpoints.append(checkpoint)
-                        # Turning DOWN
-                        if tile_sprites[checkpoint.index - 2 * map.width].color == grass:
-                            self.speed = [self.speed[1], self.speed[0]]
-                        # Turning UP
-                        else:
-                            self.speed = [self.speed[1], -1 * self.speed[0]]
-                        self.move_origin(checkpoint.origin)
-
-    def hit_base(self, map):
-        if pygame.sprite.collide_rect(self, map.end):
+    def hit_base(self, terrain):
+        if pygame.sprite.collide_rect(self, terrain.end):
             self.kill()
 
-    def update(self, map):
+    def update(self, terrain):
         self.apply_speed()
-        self.hit_checkpoint(map)
-        self.hit_base(map)
+        self.move_in_terrain(terrain)
+        self.hit_base(terrain)
         self.check_health()
-        self.hit_bullet(map)
+        self.hit_bullet(terrain)
 
     def check_health(self):
         if self.health <= 0:
@@ -125,8 +90,12 @@ class Enemy(pygame.sprite.Sprite):
     def die(self):
         self.kill()
 
+
 class Boss(Enemy):
-    def __init__(self, map):
-        pos = map.start.origin
-        start_speed = map.starting_vector
-        super().__init__(pos, 1, start_speed, 10, 20, blue)
+    def __init__(self, terrain):
+        pos = terrain.start.origin
+        tiles = terrain.surrounding_tiles(terrain.start, multiplier=2)
+        for tile in tiles:
+            if tile.color == road:
+                direction = vector.unit(vector.distance(tile.pos, terrain.start.pos))
+        super().__init__(pos, 1, direction, 10, 20, blue)

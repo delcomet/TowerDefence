@@ -3,20 +3,21 @@ import vector
 from colors import *
 from pygame.constants import *
 import pygame
+import compass
+import math
 from tile import Tile
 
-class Map:
-    def __init__(self, map_name):
+class terrain:
+    def __init__(self, terrain_name):
         self.tile_size = 20
         self.start = None
         self.end = None
         
         self.tiles = pygame.sprite.OrderedUpdates()   
-        self.checkpoints = pygame.sprite.Group()
         self.bases = pygame.sprite.Group()
         self.roads = pygame.sprite.Group()     
 
-        self.setup_map(map_name)
+        self.setup_terrain(terrain_name)
 
         self.pixel_size = [self.tile_size * self.width, self.tile_size * self.height]
 
@@ -31,12 +32,6 @@ class Map:
 
         self.end.image.fill(black)
 
-        for block in self.checkpoints:
-            if block.rect.x == self.start.rect.x or block.rect.y == self.start.rect.y:
-                a = [block.pos[0] - self.start.pos[0], block.pos[1] - self.start.pos[1]]
-                mag = vector.mag(a)
-                self.starting_vector = vector.times(1 / mag, a)
-
         tiles_loaded = str(len(self.tiles))
         window_in_tiles = str(self.width * self.height)
         if tiles_loaded != window_in_tiles:
@@ -48,21 +43,57 @@ class Map:
         self.bullet_group = pygame.sprite.Group()
         self.moving_tower_group = pygame.sprite.GroupSingle()
 
+    def available_space(self, sprite):
+        if pygame.sprite.spritecollide(sprite, self.roads, False):
+            return False
+        elif pygame.sprite.spritecollide(sprite, self.static_tower_group, False):
+            return False
+        elif pygame.sprite.spritecollide(sprite, self.bases, False):
+            return False
+        else:
+            return True
+
+    def get_tile(self, pos):
+        if pos[0] < 0 or pos[1] < 0 or pos[0] > self.pixel_size[0] or pos[1] > self.pixel_size[1]:
+            return Tile([0, 0, 0], pos, 0)
+
+        row = math.floor(pos[1] / self.tile_size)
+        column = math.floor(pos[0] / self.tile_size)
+
+        sprites = self.tiles.sprites()
+        index = row * self.width + column
+
+        if len(sprites) > index:
+            return sprites[index]
+        else:
+            return Tile([0, 0, 0], pos, 0)
+
+    def surrounding_tiles(self, tile, multiplier=1):
+        surrounding = []
+        for direction in compass.DIRECTIONS:
+            distance = vector.times(self.tile_size * multiplier, direction)
+            pos = vector.plus(tile.origin, distance)
+            found_tile =  self.get_tile(pos)
+            if found_tile.size != 0:
+                surrounding.append(found_tile)
+        return surrounding
 
 
-    def setup_map(self, map_name):
+
+
+    def setup_terrain(self, terrain_name):
         x = 0
         y = 0
         index = 0
 
-        with open(map_name) as f:
-            map_lines = f.readlines()
+        with open(terrain_name) as f:
+            terrain_lines = f.readlines()
 
 
-        self.width = (len(map_lines[0]) - 1)
-        self.height = (len(map_lines))
+        self.width = (len(terrain_lines[0]) - 1)
+        self.height = (len(terrain_lines))
 
-        for line in map_lines:
+        for line in terrain_lines:
             width = 0
             for digit in line:
 
@@ -72,10 +103,6 @@ class Map:
                 elif digit == '1':
                     created_tile = Tile(road, [x, y], self.tile_size)
                     self.roads.add(created_tile)
-
-                elif digit == '2':
-                    created_tile = Tile(road, [x, y], self.tile_size)
-                    self.checkpoints.add(created_tile)
 
                 elif digit == '8':
                     created_tile = Tile(green, [x, y], self.tile_size)
@@ -106,25 +133,17 @@ class Map:
         self.static_tower_group.update()
         self.moving_tower_group.update()
 
+        
+
     def handle_event(self, event, mouse):
         for tower in self.static_tower_group:
             tower.handle_event(event, mouse)
         for tower in self.moving_tower_group:
             tower.handle_event(event, mouse)
-        if event is not None:
-            if event.type == MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    self.try_drop_tower(mouse)
 
 
-    def try_drop_tower(self, mouse):
-        if len(self.moving_tower_group) > 0:
-            if self.moving_tower_group.sprites()[0].rect.collidepoint(mouse):
-                if self.moving_tower_group.sprites()[0].range_color == white:
-                    self.static_tower_group.add(self.moving_tower_group.sprites()[0])
-                    self.moving_tower_group.empty()
-            else:
-                self.moving_tower_group.sprites()[0].kill()
+
+
 
     def draw(self, window):
         self.tiles.draw(window)
@@ -136,5 +155,5 @@ class Map:
             tower.draw_images(window)
 
         self.moving_tower_group.draw(window)
-        for tower in self.moving_tower_group.sprites():
+        for tower in self.moving_tower_group:
             tower.draw_images(window)        
