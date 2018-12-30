@@ -8,7 +8,7 @@ from colors import *
 from tile import Tile
 from towers import CannonTower, ArtilleryTower
 from enemy import Boss
-from terrain import terrain
+from terrain import Terrain
 
 def get_active(group):
     for active_sprite in group:
@@ -23,7 +23,7 @@ class Game:
     def __init__(self, terrain_name):
         pygame.init()
 
-        self.terrain = terrain(terrain_name)
+        self.terrain = Terrain(terrain_name)
         self.window_size = [self.terrain.pixel_size[0] + 250, self.terrain.pixel_size[1] + 150]
         self.window = pygame.display.set_mode(self.window_size)
 

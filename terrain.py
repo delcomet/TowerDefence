@@ -7,7 +7,7 @@ import compass
 import math
 from tile import Tile
 
-class terrain:
+class Terrain:
     def __init__(self, terrain_name):
         self.tile_size = 20
         self.start = None
@@ -82,19 +82,16 @@ class terrain:
 
 
     def setup_terrain(self, terrain_name):
-        x = 0
-        y = 0
-        index = 0
 
         with open(terrain_name) as f:
             terrain_lines = f.readlines()
 
-
         self.width = (len(terrain_lines[0]) - 1)
         self.height = (len(terrain_lines))
 
+        x = 0
+        y = 0
         for line in terrain_lines:
-            width = 0
             for digit in line:
 
                 if digit == '0':
@@ -116,12 +113,8 @@ class terrain:
                 else:
                     continue
                     
-                created_tile.index = index
                 self.tiles.add(created_tile)
-                width += 1
-                x += self.tile_size
-                index += 1
-                
+                x += self.tile_size   
 
             x = 0
             y += self.tile_size
@@ -133,7 +126,7 @@ class terrain:
         self.static_tower_group.update()
         self.moving_tower_group.update()
 
-        
+
 
     def handle_event(self, event, mouse):
         for tower in self.static_tower_group:

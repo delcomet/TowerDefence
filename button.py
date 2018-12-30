@@ -2,7 +2,6 @@ import pygame
 from colors import *
 from pygame.constants import *
 
-
 class Button(pygame.sprite.Sprite):
 
     def __init__(self, color, width, height, pos, alpha=255):

@@ -2,39 +2,39 @@ import vector
 from colors import *
 import pygame
 import compass
+import math
 
 class Enemy(pygame.sprite.Sprite):
+
+    distance_travelled = 0
+    bar_distance = 8
+
     def __init__(self, pos, speed, direction, health, radius, color):
         super().__init__()
-
         self.color = color.copy()
-        self.pos = pos
         self.radius = radius
         self.speed = speed
         self.direction = direction
-        self.image = pygame.Surface([radius * 2, radius * 2])
-        self.image.fill(white)
-        self.image.set_colorkey(white)
-        pygame.draw.circle(self.image, color, (radius, radius), radius, )
-        self.origin = pos[0] + radius, pos[1] + radius
-        self.rect = self.image.get_rect()
-        self.index = 0
-        self.move_origin(pos)
-        self.distance_travelled = 0
         self.start_health = health
         self.health = health
 
-    def set_position(self, pos):
-        self.rect.x = pos[0]
-        self.rect.y = pos[1]
-        self.origin = pos[0] + self.radius, pos[1] + self.radius
-        self.pos = pos
+        self.image = pygame.Surface([radius * 2, radius * 2 + self.bar_distance])
+        self.image.fill(white)
+        self.image.set_colorkey(white)
+        self.draw_image()
+        self.rect = self.image.get_rect()
 
-    def move_origin(self, pos):
-        self.origin = pos
-        self.pos = [self.origin[0] - self.radius, self.origin[1] - self.radius]
-        self.rect.x = self.pos[0]
-        self.rect.y = self.pos[1]
+        self.set_origin(pos)
+
+    def set_position(self, pos):
+        self.rect.x = pos[0] 
+        self.rect.y = pos[1] - self.bar_distance
+        self.origin = (pos[0] + self.radius, pos[1] + self.radius)
+        self.pos = tuple(pos)
+
+    def set_origin(self, pos):
+        self.set_position([pos[0] - self.radius, pos[1] - self.radius])
+        
 
     def apply_speed(self):
         movement = vector.times(self.speed, self.direction)
@@ -43,7 +43,12 @@ class Enemy(pygame.sprite.Sprite):
         self.distance_travelled += vector.mag(movement)
 
     def draw_image(self):
-        pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius, )
+        pygame.draw.circle(self.image, self.color, (self.radius, self.radius + self.bar_distance), self.radius, )
+        bar_lenght = self.radius*2
+        pygame.draw.line(self.image, red, (0, 0), (bar_lenght, 0), 8)
+        end = (bar_lenght * (self.health / self.start_health), 0)
+        pygame.draw.line(self.image, green, (0, 0), end, 8)
+
 
     def move_in_terrain(self, terrain):
         if not self.can_go(terrain, self.direction):
@@ -75,7 +80,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def check_health(self):
         if self.health <= 0:
-            self.die()
+            self.kill()
 
     def hit_bullet(self, game):
         if pygame.sprite.spritecollide(self, game.bullet_group, True):
@@ -83,12 +88,9 @@ class Enemy(pygame.sprite.Sprite):
             self.color[0] += 255 / self.start_health
             self.color[2] += -255 / self.start_health
             if self.color[2] < 0:
-                self.die()
+                self.kill()
             else:
                 self.draw_image()
-
-    def die(self):
-        self.kill()
 
 
 class Boss(Enemy):

@@ -71,16 +71,29 @@ class Tower(pygame.sprite.Sprite):
                 self.on_click(mouse)
                     
         if not self.static:
-            self.follow_mouse(mouse)
-            if left_click(event):
+            if event.type == MOUSEMOTION:
+                self.follow_mouse(mouse)
+            elif left_click(event):
                 self.drop_on_map(mouse)
-            if right_click(event):
+            elif right_click(event):
                 self.kill()
 
     def follow_mouse(self, mouse):
         tile = self.terrain.get_tile((mouse[0] - self.width / 4, mouse[1] - self.height / 4))
         if tile.size:
             self.set_position(tile.pos)
+
+        if self.terrain.available_space(self):
+            self.range_color = white
+        else:
+            self.range_color = red
+
+        remainder_x = self.rect.x + self.rect.width - self.terrain.pixel_size[0]
+        remainder_y = self.rect.y + self.rect.height - self.terrain.pixel_size[1]
+        if remainder_x > 0:
+            self.set_position([self.pos[0] - remainder_x, self.pos[1]])
+        if remainder_y > 0:
+            self.set_position([self.pos[0], self.pos[1] - remainder_y])
 
     def drop_on_map(self, mouse):
         if self.rect.collidepoint(mouse) and self.range_color == white:
@@ -98,18 +111,6 @@ class Tower(pygame.sprite.Sprite):
     def update(self):
         if self.static:
             self.enemy_detection()
-        else:
-            self.active_state = 1
-            if self.terrain.available_space(self):
-                self.range_color = white
-            else:
-                self.range_color = red
-            remainder_x = self.rect.x + self.rect.width - self.terrain.pixel_size[0]
-            remainder_y = self.rect.y + self.rect.height - self.terrain.pixel_size[1]
-            if remainder_x > 0:
-                self.set_position([self.pos[0] - remainder_x, self.pos[1]])
-            if remainder_y > 0:
-                self.set_position([self.pos[0], self.pos[1] - remainder_y])
 
 
     def draw_images(self, window):
@@ -121,7 +122,7 @@ class Tower(pygame.sprite.Sprite):
             window.blit(self.range_image, [self.origin[0] - self.range, self.origin[1] - self.range])
 
     def enemy_detection(self):
-        target = self.find_target(strategy.nearest)
+        target = self.find_target(strategy.longest_distance)
         if target:
             self.rotate_cannon(target)
             direction = self.aim(target)

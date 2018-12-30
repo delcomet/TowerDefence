@@ -15,7 +15,6 @@ class Tile(pygame.sprite.Sprite):
         self.rect.x = pos[0]
         self.rect.y = pos[1]
         self.origin = [pos[0] + size / 2, pos[1] + size / 2]
-        self.index = 0
         if self.color == grass:
             pygame.draw.line(self.image, darkgreen, [0, 0], [0, size], 1)
             pygame.draw.line(self.image, darkgreen, [0, 0], [size, 0], 1)
