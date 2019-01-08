@@ -1,5 +1,5 @@
 import vector
-from colors import *
+from colors import colors
 import pygame
 import compass
 import math
@@ -11,7 +11,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def __init__(self, pos, speed, direction, health, radius, color):
         super().__init__()
-        self.color = color.copy()
+        self.color = list(color)
         self.radius = radius
         self.speed = speed
         self.direction = direction
@@ -19,8 +19,8 @@ class Enemy(pygame.sprite.Sprite):
         self.health = health
 
         self.image = pygame.Surface([radius * 2, radius * 2 + self.bar_distance])
-        self.image.fill(white)
-        self.image.set_colorkey(white)
+        self.image.fill(colors['white'])
+        self.image.set_colorkey(colors['white'])
         self.draw_image()
         self.rect = self.image.get_rect()
 
@@ -45,9 +45,9 @@ class Enemy(pygame.sprite.Sprite):
     def draw_image(self):
         pygame.draw.circle(self.image, self.color, (self.radius, self.radius + self.bar_distance), self.radius, )
         bar_lenght = self.radius*2
-        pygame.draw.line(self.image, red, (0, 0), (bar_lenght, 0), 8)
+        pygame.draw.line(self.image, colors['red'], (0, 0), (bar_lenght, 0), 8)
         end = (bar_lenght * (self.health / self.start_health), 0)
-        pygame.draw.line(self.image, green, (0, 0), end, 8)
+        pygame.draw.line(self.image, colors['green'], (0, 0), end, 8)
 
 
     def move_in_terrain(self, terrain):
@@ -61,7 +61,7 @@ class Enemy(pygame.sprite.Sprite):
         distance_vector = vector.times(1.5 * terrain.tile_size + 1, direction)
         tile_pos = vector.plus(distance_vector, self.origin)
         tile = terrain.get_tile(tile_pos)
-        if tile.color == grass:
+        if tile.color == colors['grass']:
             return False
         else:
             return True
@@ -98,6 +98,6 @@ class Boss(Enemy):
         pos = terrain.start.origin
         tiles = terrain.surrounding_tiles(terrain.start, multiplier=2)
         for tile in tiles:
-            if tile.color == road:
+            if tile.color == colors['road']:
                 direction = vector.unit(vector.distance(tile.pos, terrain.start.pos))
-        super().__init__(pos, 1, direction, 10, 20, blue)
+        super().__init__(pos, 1, direction, 10, 20, colors['blue'])

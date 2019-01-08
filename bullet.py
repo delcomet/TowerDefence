@@ -1,12 +1,12 @@
 import vector
-from colors import *
+from colors import colors
 import pygame
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, start_pos, speed):
         super().__init__()
         self.image = pygame.Surface([5, 5])
-        self.image.fill(black)
+        self.image.fill(colors['black'])
         self.rect = self.image.get_rect()
         self.speed = speed
         self.pos = start_pos

@@ -1,6 +1,6 @@
 
 import vector
-from colors import *
+from colors import colors
 from pygame.constants import *
 import pygame
 import compass
@@ -30,7 +30,7 @@ class Terrain:
         if remainder > 0:
             self.end.rect.x += -remainder
 
-        self.end.image.fill(black)
+        self.end.image.fill(colors['black'])
 
         tiles_loaded = str(len(self.tiles))
         window_in_tiles = str(self.width * self.height)
@@ -42,6 +42,44 @@ class Terrain:
         self.enemy_group = pygame.sprite.Group()
         self.bullet_group = pygame.sprite.Group()
         self.moving_tower_group = pygame.sprite.GroupSingle()
+
+    def setup_terrain(self, terrain_name):
+
+        with open(terrain_name) as f:
+            terrain_lines = f.readlines()
+
+        self.width = (len(terrain_lines[0]) - 1)
+        self.height = (len(terrain_lines))
+
+        x = 0
+        y = 0
+        for line in terrain_lines:
+            for digit in line:
+
+                if digit == '0':
+                    created_tile = Tile(colors['grass'], [x, y], self.tile_size)
+
+                elif digit == '1':
+                    created_tile = Tile(colors['road'], [x, y], self.tile_size)
+                    self.roads.add(created_tile)
+
+                elif digit == '8':
+                    created_tile = Tile(colors['green'], [x, y], self.tile_size)
+                    self.start = created_tile
+                    self.bases.add(created_tile)
+
+                elif digit == '9':
+                    created_tile = Tile(colors['red'], [x, y], self.tile_size)
+                    self.end = created_tile
+                    self.bases.add(self.end)
+                else:
+                    continue
+                    
+                self.tiles.add(created_tile)
+                x += self.tile_size   
+
+            x = 0
+            y += self.tile_size
 
     def available_space(self, sprite):
         if pygame.sprite.spritecollide(sprite, self.roads, False):
@@ -78,47 +116,6 @@ class Terrain:
                 surrounding.append(found_tile)
         return surrounding
 
-
-
-
-    def setup_terrain(self, terrain_name):
-
-        with open(terrain_name) as f:
-            terrain_lines = f.readlines()
-
-        self.width = (len(terrain_lines[0]) - 1)
-        self.height = (len(terrain_lines))
-
-        x = 0
-        y = 0
-        for line in terrain_lines:
-            for digit in line:
-
-                if digit == '0':
-                    created_tile = Tile(grass, [x, y], self.tile_size)
-
-                elif digit == '1':
-                    created_tile = Tile(road, [x, y], self.tile_size)
-                    self.roads.add(created_tile)
-
-                elif digit == '8':
-                    created_tile = Tile(green, [x, y], self.tile_size)
-                    self.start = created_tile
-                    self.bases.add(created_tile)
-
-                elif digit == '9':
-                    created_tile = Tile(red, [x, y], self.tile_size)
-                    self.end = created_tile
-                    self.bases.add(self.end)
-                else:
-                    continue
-                    
-                self.tiles.add(created_tile)
-                x += self.tile_size   
-
-            x = 0
-            y += self.tile_size
-
     def update(self):
         # Update functions:
         self.enemy_group.update(self)
@@ -127,16 +124,11 @@ class Terrain:
         self.moving_tower_group.update()
 
 
-
     def handle_event(self, event, mouse):
         for tower in self.static_tower_group:
             tower.handle_event(event, mouse)
         for tower in self.moving_tower_group:
             tower.handle_event(event, mouse)
-
-
-
-
 
     def draw(self, window):
         self.tiles.draw(window)
@@ -149,4 +141,4 @@ class Terrain:
 
         self.moving_tower_group.draw(window)
         for tower in self.moving_tower_group:
-            tower.draw_images(window)        
+            tower.draw_images(window)

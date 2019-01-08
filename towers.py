@@ -1,6 +1,6 @@
 import vector
 import strategy
-from colors import *
+from colors import colors
 from pygame.constants import *
 import pygame
 from pygame import Rect
@@ -10,37 +10,26 @@ from helpers import *
 from bullet import Bullet
 
 class Tower(pygame.sprite.Sprite):
+    last_shot = 0
+    static = False 
+    active = True
+
     def __init__(self, terrain, width, height, image_file):
         super().__init__()
         self.terrain = terrain
         self.width = width * terrain.tile_size
         self.height = height * terrain.tile_size
         self.image = pygame.Surface([self.width, self.height])
-        self.image.fill(grass)
-        self.image.set_colorkey(grass)
+        self.image.fill(colors['grass'])
+        self.image.set_colorkey(colors['grass'])
         self.rect = self.image.get_rect()
         self.set_position(pygame.mouse.get_pos())
-
-        self.last_shot = pygame.time.get_ticks()
-        self.static = False 
-        self.barrel_axis = None
-        self.range = 0
-        self.bullet_speed = 0
-        self.cooldown = 0
-        self.timer = 0
-        self.active_state = 1
 
         self.original_cannon_image = pygame.image.load(image_file).convert_alpha()
         self.original_cannon_image = pygame.transform.scale(self.original_cannon_image, [self.width, self.height])
         self.original_cannon_image_rect = self.original_cannon_image.get_rect()
         self.rotated_cannon = self.original_cannon_image
 
-        self.range_image = pygame.Surface([self.range * 2, self.range * 2])
-        self.range_image_rect = self.range_image.get_rect()
-        self.range_color = red.copy()
-        self.range_image.fill(grass)
-        self.range_image.set_colorkey(grass)
-        self.range_image.set_alpha(100)
 
     def setup_turret(self, fire_range, bullet_speed, cooldown, barrel_axis):
         self.range = fire_range
@@ -51,7 +40,7 @@ class Tower(pygame.sprite.Sprite):
 
         self.range_image = pygame.Surface([self.range * 2, self.range * 2])
         self.range_image_rect = self.range_image.get_rect()
-        self.range_color = red.copy()
+        self.range_color = colors['red']
         transparent = (123, 123, 123)
         self.range_image.fill(transparent)
         self.range_image.set_colorkey(transparent)
@@ -61,6 +50,13 @@ class Tower(pygame.sprite.Sprite):
         self.pos = pos
         self.origin = [pos[0] + self.width / 2, pos[1] + self.height / 2]
         self.rect.x, self.rect.y = pos
+
+        remainder_x = self.rect.x + self.rect.width - self.terrain.pixel_size[0]
+        remainder_y = self.rect.y + self.rect.height - self.terrain.pixel_size[1]
+        if remainder_x > 0:
+            self.set_position([self.pos[0] - remainder_x, self.pos[1]])
+        if remainder_y > 0:
+            self.set_position([self.pos[0], self.pos[1] - remainder_y])
 
 
     def handle_event(self, event, mouse):
@@ -84,28 +80,22 @@ class Tower(pygame.sprite.Sprite):
             self.set_position(tile.pos)
 
         if self.terrain.available_space(self):
-            self.range_color = white
+            self.range_color = colors['white']
         else:
-            self.range_color = red
-
-        remainder_x = self.rect.x + self.rect.width - self.terrain.pixel_size[0]
-        remainder_y = self.rect.y + self.rect.height - self.terrain.pixel_size[1]
-        if remainder_x > 0:
-            self.set_position([self.pos[0] - remainder_x, self.pos[1]])
-        if remainder_y > 0:
-            self.set_position([self.pos[0], self.pos[1] - remainder_y])
+            self.range_color = colors['red']
+        
 
     def drop_on_map(self, mouse):
-        if self.rect.collidepoint(mouse) and self.range_color == white:
+        if self.rect.collidepoint(mouse) and self.range_color == colors['white']:
             self.static = True
             self.terrain.static_tower_group.add(self)
             self.terrain.moving_tower_group.empty()
 
     def on_click(self, mouse):
         if self.rect.collidepoint(mouse):
-            self.active_state = not self.active_state
+            self.active = not self.active
         else:
-            self.active_state = 0
+            self.active = False
 
 
     def update(self):
@@ -114,9 +104,9 @@ class Tower(pygame.sprite.Sprite):
 
 
     def draw_images(self, window):
-        self.image.fill(grass)
+        self.image.fill(colors['grass'])
         self.image.blit(self.rotated_cannon, [0, 0])
-        if self.active_state == 1:
+        if self.active:
             pygame.draw.circle(self.range_image, self.range_color,
                                [self.range_image_rect.centerx, self.range_image_rect.centery], self.range)
             window.blit(self.range_image, [self.origin[0] - self.range, self.origin[1] - self.range])
@@ -171,13 +161,26 @@ class Tower(pygame.sprite.Sprite):
 
 
 class CannonTower(Tower):
+    
+    description = "Cannon Tower"
+    icon_file = 'data/images/cannon.png'
+    icon_size = (40, 40)
+
     def __init__(self, terrain):
-        super().__init__(terrain, 2, 2, 'data/images/cannon.png')
-        self.setup_turret(100, 10, 0.1, [0, -1])
+
+        super().__init__(terrain, 2, 2, self.icon_file)
+        self.setup_turret(fire_range=100, bullet_speed=10, cooldown=0.5, barrel_axis=[0, -1])
 
 
 class ArtilleryTower(Tower):
+    
+    description = "Artillery Tower"
+    icon_file = 'data/images/artillery.png'
+    icon_size = (55, 55)
+
     def __init__(self, terrain):
-        super().__init__(terrain, 3, 3, 'data/images/artillery.png')
-        self.setup_turret(200, 30, 1, [0, -1])
+
+        super().__init__(terrain, 3, 3, self.icon_file)
+        self.setup_turret(fire_range=200, bullet_speed=30, cooldown=1, barrel_axis=[0, -1])
+
 
