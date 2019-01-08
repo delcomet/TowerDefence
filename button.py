@@ -89,7 +89,8 @@ class Button(pygame.sprite.Sprite):
                 if event.button == 1:
                     if self.rect.collidepoint(pygame.mouse.get_pos()):
                         self.function()
-                    self.draw(self.normal_image)
+                    if not self.locked:
+                        self.draw(self.normal_image)
 
 
     def on_hover(self):

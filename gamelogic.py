@@ -55,18 +55,20 @@ class Game:
         start_button.set_position((self.terrain.pixel_size[0] + 25, 670))
         start_button.set_icon_text("Start", font_size=50)
         start_button.set_description("Start round 1", info_box)
+        start_button.function = self.start_round
 
         self.description = info_box
+        self.start_button = start_button
         self.buttons = pygame.sprite.Group(start_button)
 
-
+    def start_round(self):
+        pygame.time.set_timer(pygame.USEREVENT, 1000)
+        self.start_button.lock()
 
     def mainloop(self):
         while True:
 
             mouse = pygame.mouse.get_pos()
-            # if self.terrain.get_tile(mouse).size:
-            #     self.description.default_text()
 
             for event in pygame.event.get():
                 self.tower_buttons.update(event)
@@ -89,10 +91,10 @@ class Game:
         if event.type == QUIT:
             pygame.quit()
             quit()
+        elif event.type == USEREVENT:
+            self.terrain.enemy_group.add(Boss(self.terrain))
         elif event.type == KEYDOWN:
-            if event.key == K_SPACE:
-                self.terrain.enemy_group.add(Boss(self.terrain))
-            elif event.key == K_r:
+            if event.key == K_r:
                 self.terrain.static_tower_group.empty()
                 self.terrain.enemy_group.empty()
             elif event.key == K_DELETE:
