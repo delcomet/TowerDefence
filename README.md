@@ -1,3 +1,3 @@
 # Tower Defence Game
 
-![alt text](tdgame.png)
+![alt text](https://raw.githubusercontent.com/thecodebasesite/TowerDefence/master/tdgame.png)
